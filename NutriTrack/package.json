@@ -11,6 +11,8 @@
   "dependencies": {
     "dotenv": "^16.4.7",
     "express": "^5.1.0",
+    "lodash": "^4.17.21",
+    "lodash-fp": "^0.10.4",
     "mongoose": "^8.13.1"
   }
 }
