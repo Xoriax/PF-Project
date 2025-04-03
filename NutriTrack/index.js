@@ -84,16 +84,21 @@ const creerRepasAvecPlat = async (plat) => {
 app.get('/meals', async (req, res) => {
     try {
         const repas = await Repas.find();
-        const repasAvecTotalCalorique = fp.map(repas => ({
-            ...repas.toObject(),
-            total_calorique: calculTotalCalorique(repas),
-            jours: formatDate()
-        }), repas);
-
-        res.json(repasAvecTotalCalorique);
+        res.json(repas);
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: 'Erreur lors de la récupération des repas' });
+        res.status(500).send('Erreur Server');
+    }
+});
+
+// Permet de récupérer tous les objectifs stockés dans la base de données
+app.get('/goals', async (req, res) => {
+    try {
+        const objectif = await Objectifs.find();
+        res.json(objectif);
+    } catch (err0) {
+        console.error(err);
+        res.status(500).send('Erreur Server')
     }
 });
 
@@ -124,9 +129,22 @@ app.post('/meals', async (req, res) => {
         res.status(201).json(repas);
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: "Erreur lors de l'ajout du repas" });
+        res.status(500).send("Erreur Server");
     }
 });
+
+app.post('/goals', async (req, res) => {
+    const obj = req.body;
+
+    if (!Array.isArray(plats) || plats.length === 0) {
+        return res.status(400).json({ message: "Le corps de la requête doit contenir un tableau de plats." });
+    }
+
+    const dateDuJour = formatDate();
+    let objt = await Objectifs.findOne({ jours: dateDuJour });
+
+    // logique de verif si obj existe cela le met à jours sinon en créer  
+})
 
 app.listen(PORT, () => {
     console.log(`Serveur démarré sur le port ${PORT}`);
