@@ -56,9 +56,9 @@ const connectRoutes = (app) => {
             let repas = await Repas.findOne({ jours: dateDuJour }); // Chercher le repas pour la date du jour
 
             // Utiliser la méthode `reduce` pour itérer sur tous les plats et soit mettre à jour un repas existant, soit créer un nouveau repas
-            repas = await plats.reduce(async (accPromise, plat) => {
-                const acc = await accPromise; // Attendre que le précédent repas soit traité
-                return acc ? ajouterOuMettreAJourPlat(acc, plat) : creerRepasAvecPlat(plat); // Mettre à jour ou créer un nouveau repas
+            repas = await plats.reduce(async (RepasPromise, plat) => {
+                const repasEnCours = await RepasPromise; // Attendre que le précédent repas soit traité
+                return repasEnCours ? ajouterOuMettreAJourPlat(repasEnCours, plat) : creerRepasAvecPlat(plat); // Mettre à jour ou créer un nouveau repas
             }, Promise.resolve(repas)); // Initialiser avec un repas existant ou `null`
 
             res.status(201).json(repas);
