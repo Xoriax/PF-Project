@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liste des repas</title>
+</head>
+
+<body>
+    <h1>Liste des repas</h1>
+
+    <!-- Objectifs Nutritionnels -->
+    <h2>Objectifs Nutritionnels</h2>
+    <ul id="objectifs-list">
+        <li>Calories: <span id="calories-val">2000</span> kcal</li>
+        <li>Protéines: <span id="proteines-val">150</span> g</li>
+        <li>Glucides: <span id="glucides-val">250</span> g</li>
+        <li>Lipides: <span id="lipides-val">70</span> g</li>
+    </ul>
+
+    <!-- Formulaire de modification des objectifs nutritionnels -->
+    <h3>Modifier les objectifs nutritionnels</h3>
+    <form id="form-modifier-objectifs">
+        <label for="calories">Calories:</label>
+        <input type="number" id="calories" placeholder="Calories" required />
+        <label for="proteines">Protéines (g):</label>
+        <input type="number" id="proteines" placeholder="Protéines" required />
+        <label for="glucides">Glucides (g):</label>
+        <input type="number" id="glucides" placeholder="Glucides" required />
+        <label for="lipides">Lipides (g):</label>
+        <input type="number" id="lipides" placeholder="Lipides" required />
+        <button type="submit">Mettre à jour les objectifs</button>
+    </form>
+
+    <!-- Formulaire d'ajout d'un repas -->
+    <h2>Ajouter un plat</h2>
+    <form id="form-ajout-repas">
+        <input type="text" id="plat-nom" placeholder="Nom du plat" required />
+        <input type="number" id="plat-calories" placeholder="Calories" required />
+        <input type="number" id="plat-proteines" placeholder="Protéines (g)" required />
+        <input type="number" id="plat-glucides" placeholder="Glucides (g)" required />
+        <input type="number" id="plat-lipides" placeholder="Lipides (g)" required />
+        <button type="submit">Ajouter le plat</button>
+    </form>
+
+    <!-- Zone d'affichage des repas -->
+    <div id="repas-list"></div>
+
+    <script>
+        // Fonction pure qui retourne les objectifs initiaux
+        const getObjectifsInitiaux = () => ({
+            calories: 2000,
+            proteines: 150,
+            glucides: 250,
+            lipides: 70
+        });
+
+        // Fonction pure pour calculer les totaux d'un repas
+        const calculerTotalRepas = repas => ({
+            calories: repas.plats.reduce((acc, plat) => acc + plat.calories, 0),
+            proteines: repas.plats.reduce((acc, plat) => acc + plat.proteines, 0),
+            glucides: repas.plats.reduce((acc, plat) => acc + plat.glucides, 0),
+            lipides: repas.plats.reduce((acc, plat) => acc + plat.lipides, 0)
+        });
+
+        // Fonction pure pour vérifier si les objectifs sont atteints
+        const verifierObjectif = (total, objectifs) => ({
+            calories: total.calories >= objectifs.calories,
+            proteines: total.proteines >= objectifs.proteines,
+            glucides: total.glucides >= objectifs.glucides,
+            lipides: total.lipides >= objectifs.lipides
+        });
+
+        // Fonction pour générer un HTML d'affichage des repas
+        const genererRepasHTML = (repas, objectifs) => {
+            const total = calculerTotalRepas(repas);
+            const objectifAtteint = verifierObjectif(total, objectifs);
+
+            return `
+                <div class="repas">
+                    <h3>Repas du ${repas.jours}</h3>
+                    <ul>
+                        ${repas.plats.map(plat => `
+                            <li>${plat.nom}: ${plat.calories} calories, ${plat.proteines}g protéines, ${plat.glucides}g glucides, ${plat.lipides}g lipides</li>
+                        `).join('')}
+                    </ul>
+                    <p>Total Calories: ${total.calories} / ${objectifs.calories} (objectif) - ${objectifAtteint.calories ? 'Objectif Atteint' : 'Objectif Non Atteint'}</p>
+                    <p>Total Protéines: ${total.proteines}g / ${objectifs.proteines}g (objectif) - ${objectifAtteint.proteines ? 'Objectif Atteint' : 'Objectif Non Atteint'}</p>
+                    <p>Total Glucides: ${total.glucides}g / ${objectifs.glucides}g (objectif) - ${objectifAtteint.glucides ? 'Objectif Atteint' : 'Objectif Non Atteint'}</p>
+                    <p>Total Lipides: ${total.lipides}g / ${objectifs.lipides}g (objectif) - ${objectifAtteint.lipides ? 'Objectif Atteint' : 'Objectif Non Atteint'}</p>
+                </div>
+            `;
+        };
+
+        // Fonction pour afficher les repas
+        const afficherRepas = (repas, objectifs) => {
+            const repasContainer = document.getElementById('repas-list');
+            repasContainer.innerHTML = repas.map(r => genererRepasHTML(r, objectifs)).join('');
+        };
+
+        // Récupération des repas depuis le backend
+        const fetchRepas = async () => {
+            try {
+                const response = await fetch('http://localhost:3000/meals');
+                const data = await response.json();
+                afficherRepas(data, objectifs);
+            } catch (error) {
+                console.error('Erreur de récupération des repas:', error);
+            }
+        };
+
+        // Fonction pour mettre à jour l'affichage des objectifs
+        const mettreAJourObjectifs = (objectifs) => {
+            document.getElementById('calories-val').textContent = objectifs.calories;
+            document.getElementById('proteines-val').textContent = objectifs.proteines;
+            document.getElementById('glucides-val').textContent = objectifs.glucides;
+            document.getElementById('lipides-val').textContent = objectifs.lipides;
+        };
+
+        // Fonction pour gérer la modification des objectifs
+        const modifierObjectifs = (event) => {
+            event.preventDefault();
+
+            objectifs = {
+                calories: parseInt(document.getElementById('calories').value),
+                proteines: parseInt(document.getElementById('proteines').value),
+                glucides: parseInt(document.getElementById('glucides').value),
+                lipides: parseInt(document.getElementById('lipides').value)
+            };
+
+            mettreAJourObjectifs(objectifs);
+            fetchRepas();  // Rafraîchir la liste des repas avec les nouveaux objectifs
+        };
+
+        // Fonction pour gérer l'ajout de repas
+        const ajouterPlat = async (event) => {
+            event.preventDefault();
+
+            const plat = {
+                nom: document.getElementById('plat-nom').value,
+                calories: parseInt(document.getElementById('plat-calories').value),
+                proteines: parseInt(document.getElementById('plat-proteines').value),
+                glucides: parseInt(document.getElementById('plat-glucides').value),
+                lipides: parseInt(document.getElementById('plat-lipides').value)
+            };
+
+            try {
+                const response = await fetch('http://localhost:3000/meals', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify([plat])
+                });
+
+                const data = await response.json();
+                afficherRepas(data, objectifs);
+            } catch (error) {
+                console.error('Erreur lors de l\'ajout du repas:', error);
+            }
+        };
+
+        // Initialisation des objectifs et affichage des repas au chargement
+        let objectifs = getObjectifsInitiaux();
+        mettreAJourObjectifs(objectifs);
+        fetchRepas();
+
+        // Ajout des écouteurs d'événements
+        document.getElementById('form-modifier-objectifs').addEventListener('submit', modifierObjectifs);
+        document.getElementById('form-ajout-repas').addEventListener('submit', ajouterPlat);
+    </script>
+</body>
+
+</html>
