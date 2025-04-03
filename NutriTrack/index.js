@@ -29,7 +29,16 @@ const repasSchema = new mongoose.Schema({
     jours: String
 });
 
+const objectifsSchema = new mongoose.Schema({
+    objectif_calorique: Number,
+    objectif_proteine: Number,
+    objectif_glucide: Number,
+    objectif_lipide: Number,
+    jours: String
+})
+
 const Repas = mongoose.model('repas', repasSchema); // Créer un model à partir du schéma et permet d'intéragir avec les données de la DB
+const Objectifs = mongoose.model('objectif', objectifsSchema);
 
 // Fonctionnalité
 // Permet de calculer le total des calories d'un repas en additionnant les calories de tout les plats
