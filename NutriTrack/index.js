@@ -8,6 +8,7 @@ const fp = require("lodash/fp");
 dotenv.config(); // charge les variables dans le .env
 
 const app = express(); // créer une new app express
+app.use(express.json());
 
 // PORT et mongoDB sont récupérer depuis le fichier .env
 const PORT = process.env.PORT;
@@ -91,24 +92,30 @@ app.get('/meals', async (req, res) => {
 app.post('/meals', async (req, res) => {
     try {
         const plats = req.body;
-        const dateDuJour = formatDate(); // Récupère la date du jour
-        
+
+        if (!Array.isArray(plats) || plats.length === 0) {
+            return res.status(400).json({ message: "Le corps de la requête doit contenir un tableau de plats." });
+        }
+
+        const dateDuJour = formatDate();
         let repas = await Repas.findOne({ jours: dateDuJour });
 
         if (repas) {
-            repas = await fp.reduce(async (acc, plat) => {
-                return await ajouterOuMettreAJourPlat(acc, plat); // Mise à jour des plats existants
-            }, repas, plats);
+            repas = await fp.reduce(async (accPromise, plat) => {
+                const acc = await accPromise;
+                return ajouterOuMettreAJourPlat(acc, plat);
+            }, Promise.resolve(repas), plats);
         } else {
-            repas = await fp.reduce(async (plat) => {
-                return await creerRepasAvecPlat(plat); // Création d'un nouveau repas
-            }, null, plats);
+            repas = await fp.reduce(async (accPromise, plat) => {
+                const acc = await accPromise;
+                return acc ? ajouterOuMettreAJourPlat(acc, plat) : creerRepasAvecPlat(plat);
+            }, Promise.resolve(null), plats);
         }
 
         res.status(201).json(repas);
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: 'Erreur lors de l\'ajout du repas' });
+        res.status(500).json({ message: "Erreur lors de l'ajout du repas" });
     }
 });
 
